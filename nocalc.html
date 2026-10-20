@@ -1,0 +1,3225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeoCalc — Modern Animated Calculator & Secret Vault</title>
+  <meta name="description" content="A fully functional, modern animated calculator with operator precedence, recursive-descent parser, glassmorphic design, light and dark themes, calculation history, and a hidden secure media vault.">
+  <style>
+    /* -------------------------------------------------------------
+       CSS Custom Properties (Dark & Light Theming)
+       ------------------------------------------------------------- */
+    :root {
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --transition-speed: 0.35s;
+
+      /* Dark Theme (Default) */
+      --bg-gradient: radial-gradient(circle at 20% 20%, #1e1b4b 0%, #0f172a 50%, #030712 100%);
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --card-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+      
+      --text-main: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      
+      --btn-num-bg: rgba(255, 255, 255, 0.08);
+      --btn-num-hover: rgba(255, 255, 255, 0.15);
+      --btn-num-border: rgba(255, 255, 255, 0.08);
+      --btn-num-text: #f8fafc;
+      
+      --btn-fn-bg: rgba(255, 255, 255, 0.12);
+      --btn-fn-hover: rgba(255, 255, 255, 0.2);
+      --btn-fn-border: rgba(255, 255, 255, 0.12);
+      --btn-fn-text: #cbd5e1;
+
+      --accent-color: #f59e0b;
+      --btn-op-bg: rgba(245, 158, 11, 0.15);
+      --btn-op-hover: rgba(245, 158, 11, 0.25);
+      --btn-op-border: rgba(245, 158, 11, 0.3);
+      --btn-op-text: #fbbf24;
+      --btn-op-active-glow: 0 0 18px rgba(245, 158, 11, 0.6);
+      --btn-op-active-border: #f59e0b;
+
+      --btn-eq-bg: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      --btn-eq-hover: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
+      --btn-eq-shadow: 0 8px 24px rgba(245, 158, 11, 0.45);
+      --btn-eq-text: #ffffff;
+
+      --display-bg: rgba(0, 0, 0, 0.25);
+      --display-border: rgba(255, 255, 255, 0.06);
+
+      --panel-bg: rgba(15, 23, 42, 0.88);
+      --panel-border: rgba(255, 255, 255, 0.1);
+      
+      --error-color: #f87171;
+      --success-color: #10b981;
+      --ripple-color: rgba(255, 255, 255, 0.35);
+      --badge-bg: rgba(245, 158, 11, 0.2);
+      --badge-text: #fbbf24;
+
+      --vault-modal-bg: rgba(15, 23, 42, 0.94);
+      --vault-item-bg: rgba(255, 255, 255, 0.05);
+      --vault-item-border: rgba(255, 255, 255, 0.1);
+    }
+
+    [data-theme="light"] {
+      --bg-gradient: radial-gradient(circle at 15% 15%, #e0e7ff 0%, #f1f5f9 55%, #cbd5e1 100%);
+      --card-bg: rgba(255, 255, 255, 0.75);
+      --card-border: rgba(255, 255, 255, 0.85);
+      --card-shadow: 0 25px 60px rgba(100, 116, 139, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.9);
+      
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      
+      --btn-num-bg: rgba(255, 255, 255, 0.9);
+      --btn-num-hover: #ffffff;
+      --btn-num-border: rgba(226, 232, 240, 0.8);
+      --btn-num-text: #1e293b;
+      
+      --btn-fn-bg: rgba(226, 232, 240, 0.7);
+      --btn-fn-hover: rgba(203, 213, 225, 0.85);
+      --btn-fn-border: rgba(203, 213, 225, 0.6);
+      --btn-fn-text: #334155;
+
+      --btn-op-bg: rgba(254, 243, 199, 0.85);
+      --btn-op-hover: rgba(253, 230, 138, 0.95);
+      --btn-op-border: rgba(245, 158, 11, 0.35);
+      --btn-op-text: #b45309;
+      --btn-op-active-glow: 0 0 16px rgba(245, 158, 11, 0.45);
+      --btn-op-active-border: #d97706;
+
+      --accent-color: #d97706;
+      --btn-eq-bg: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      --btn-eq-hover: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
+      --btn-eq-shadow: 0 8px 20px rgba(217, 119, 6, 0.35);
+      --btn-eq-text: #ffffff;
+
+      --display-bg: rgba(241, 245, 249, 0.7);
+      --display-border: rgba(203, 213, 225, 0.5);
+
+      --panel-bg: rgba(255, 255, 255, 0.94);
+      --panel-border: rgba(203, 213, 225, 0.6);
+      
+      --error-color: #dc2626;
+      --success-color: #059669;
+      --ripple-color: rgba(0, 0, 0, 0.18);
+      --badge-bg: rgba(245, 158, 11, 0.2);
+      --badge-text: #b45309;
+
+      --vault-modal-bg: rgba(255, 255, 255, 0.96);
+      --vault-item-bg: rgba(241, 245, 249, 0.9);
+      --vault-item-border: rgba(203, 213, 225, 0.7);
+    }
+
+    /* -------------------------------------------------------------
+       Base Layout & Reset
+       ------------------------------------------------------------- */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-family);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-gradient);
+      background-attachment: fixed;
+      color: var(--text-main);
+      padding: 1.25rem;
+      overflow-x: hidden;
+      transition: background var(--transition-speed) ease, color var(--transition-speed) ease;
+    }
+
+    /* -------------------------------------------------------------
+       Main Container & Glassmorphism
+       ------------------------------------------------------------- */
+    .app-wrapper {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      gap: 1.5rem;
+      max-width: 900px;
+      width: 100%;
+      perspective: 1000px;
+    }
+
+    .calculator-card {
+      position: relative;
+      background: var(--card-bg);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 1.5rem 1.6rem;
+      box-shadow: var(--card-shadow);
+      width: 360px;
+      max-width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      z-index: 2;
+      transition: transform 0.2s ease, border-color var(--transition-speed) ease, background var(--transition-speed) ease;
+    }
+
+    /* -------------------------------------------------------------
+       Header / Top Controls Bar
+       ------------------------------------------------------------- */
+    .calc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 0.15rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      user-select: none;
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-color);
+      box-shadow: 0 0 10px var(--accent-color);
+      display: inline-block;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .icon-btn {
+      position: relative;
+      background: var(--btn-fn-bg);
+      border: 1px solid var(--btn-fn-border);
+      color: var(--text-secondary);
+      border-radius: 12px;
+      width: 36px;
+      height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .icon-btn:hover {
+      color: var(--text-main);
+      background: var(--btn-fn-hover);
+      transform: translateY(-1px);
+    }
+
+    .icon-btn:focus-visible {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 2px;
+    }
+
+    .history-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: var(--accent-color);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 1px 5px;
+      min-width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: all 0.2s ease;
+    }
+
+    .history-badge.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    /* -------------------------------------------------------------
+       Display Screen
+       ------------------------------------------------------------- */
+    .display-container {
+      background: var(--display-bg);
+      border: 1px solid var(--display-border);
+      border-radius: 20px;
+      padding: 0.9rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: flex-end;
+      min-height: 98px;
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.15);
+      position: relative;
+      overflow: hidden;
+      cursor: text;
+    }
+
+    .display-preview {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      min-height: 1.2rem;
+      width: 100%;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .display-main-wrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      position: relative;
+    }
+
+    .display-main {
+      font-size: 2.35rem;
+      font-weight: 600;
+      color: var(--text-main);
+      width: 100%;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: clip;
+      word-break: break-all;
+      transition: font-size 0.15s ease, color 0.25s ease;
+    }
+
+    .display-message {
+      font-size: 0.75rem;
+      color: var(--error-color);
+      margin-top: 2px;
+      min-height: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(-2px);
+      transition: all 0.2s ease;
+    }
+
+    .display-message.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .digit-pop {
+      display: inline-block;
+      animation: digitPop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes digitPop {
+      0% { transform: scale(0.7); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .slide-left-fade {
+      animation: slideLeftFade 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes slideLeftFade {
+      0% { transform: translateX(0); opacity: 1; }
+      100% { transform: translateX(-40px); opacity: 0; }
+    }
+
+    .display-error {
+      animation: errorShake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+      color: var(--error-color) !important;
+    }
+
+    @keyframes errorShake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(3px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+      40%, 60% { transform: translate3d(5px, 0, 0); }
+    }
+
+    /* -------------------------------------------------------------
+       Keypad Grid (With explicit * and # buttons!)
+       ------------------------------------------------------------- */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.65rem;
+    }
+
+    .calc-btn {
+      position: relative;
+      height: 52px;
+      border-radius: 15px;
+      border: 1px solid transparent;
+      font-family: inherit;
+      font-size: 1.25rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      overflow: hidden;
+      outline: none;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+                  background 0.25s ease,
+                  border-color 0.25s ease,
+                  box-shadow 0.25s ease,
+                  color 0.25s ease;
+      
+      animation: btnRiseIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    @keyframes btnRiseIn {
+      0% { opacity: 0; transform: translateY(18px) scale(0.94); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .calc-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+    }
+
+    .calc-btn:active,
+    .calc-btn.btn-pressed {
+      transform: scale(0.92) !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .calc-btn:focus-visible {
+      outline: 2px solid var(--accent-color);
+      outline-offset: 2px;
+      z-index: 10;
+    }
+
+    /* Hold progress indicator for numbers */
+    .btn-num {
+      position: relative;
+    }
+    .hold-progress-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 14px;
+      border: 2px solid var(--accent-color);
+      opacity: 0;
+      transform: scale(0.85);
+      pointer-events: none;
+      transition: opacity 0.15s ease, transform 0.55s cubic-bezier(0.1, 0.8, 0.2, 1);
+    }
+    .calc-btn.holding .hold-progress-ring {
+      opacity: 1;
+      transform: scale(1.05);
+      box-shadow: 0 0 16px var(--accent-color);
+    }
+
+    .btn-num {
+      background: var(--btn-num-bg);
+      border-color: var(--btn-num-border);
+      color: var(--btn-num-text);
+    }
+    .btn-num:hover {
+      background: var(--btn-num-hover);
+    }
+
+    .btn-fn {
+      background: var(--btn-fn-bg);
+      border-color: var(--btn-fn-border);
+      color: var(--btn-fn-text);
+      font-size: 1.15rem;
+      font-weight: 600;
+    }
+    .btn-fn:hover {
+      background: var(--btn-fn-hover);
+    }
+
+    .btn-op {
+      background: var(--btn-op-bg);
+      border-color: var(--btn-op-border);
+      color: var(--btn-op-text);
+      font-size: 1.35rem;
+      font-weight: 600;
+    }
+    .btn-op:hover {
+      background: var(--btn-op-hover);
+      box-shadow: var(--btn-op-active-glow);
+    }
+
+    .btn-op.active-op {
+      border-color: var(--btn-op-active-border);
+      box-shadow: var(--btn-op-active-glow);
+      background: var(--btn-op-hover);
+      transform: scale(0.97);
+    }
+
+    /* Equals Button: Bottom Full-Width Bar */
+    .btn-equals {
+      background: var(--btn-eq-bg);
+      color: var(--btn-eq-text);
+      font-size: 1.5rem;
+      font-weight: 700;
+      box-shadow: var(--btn-eq-shadow);
+      border: none;
+      height: 48px;
+    }
+    .btn-equals:hover {
+      background: var(--btn-eq-hover);
+      box-shadow: 0 8px 24px rgba(245, 158, 11, 0.6);
+    }
+
+    .span-4 {
+      grid-column: span 4;
+    }
+
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--ripple-color) 0%, rgba(255, 255, 255, 0) 70%);
+      transform: scale(0);
+      animation: rippleEffect 0.5s ease-out;
+      pointer-events: none;
+    }
+
+    @keyframes rippleEffect {
+      to { transform: scale(2.8); opacity: 0; }
+    }
+
+    /* -------------------------------------------------------------
+       History Panel (Sidecar / Bottom Sheet)
+       ------------------------------------------------------------- */
+    .history-panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--panel-border);
+      border-radius: 28px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      width: 290px;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      z-index: 1;
+
+      opacity: 0;
+      max-width: 0;
+      padding-left: 0;
+      padding-right: 0;
+      border-width: 0;
+      transform: translateX(-20px);
+      overflow: hidden;
+      pointer-events: none;
+      transition: max-width 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.3s ease,
+                  transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                  padding 0.4s ease,
+                  border-width 0.1s ease;
+    }
+
+    .history-panel.open {
+      opacity: 1;
+      max-width: 320px;
+      padding: 1.5rem;
+      border-width: 1px;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--display-border);
+      padding-bottom: 0.75rem;
+    }
+
+    .history-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .history-clear-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .history-clear-btn:hover {
+      color: var(--error-color);
+      background: rgba(248, 113, 113, 0.1);
+    }
+
+    .history-list {
+      list-style: none;
+      overflow-y: auto;
+      max-height: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      padding-right: 4px;
+    }
+
+    .history-list::-webkit-scrollbar,
+    .vault-body::-webkit-scrollbar,
+    .notes-grid::-webkit-scrollbar {
+      width: 4px;
+    }
+    .history-list::-webkit-scrollbar-thumb,
+    .vault-body::-webkit-scrollbar-thumb,
+    .notes-grid::-webkit-scrollbar-thumb {
+      background: var(--card-border);
+      border-radius: 4px;
+    }
+
+    .history-item {
+      background: var(--display-bg);
+      border: 1px solid var(--display-border);
+      border-radius: 12px;
+      padding: 0.65rem 0.85rem;
+      text-align: right;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .history-item:hover {
+      border-color: var(--accent-color);
+      transform: translateX(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .history-item-expr {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-item-res {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-main);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .history-empty {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+      padding: 2.5rem 0;
+      font-style: italic;
+    }
+
+    .keyboard-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: -0.25rem;
+      text-align: center;
+      flex-wrap: wrap;
+    }
+
+    .kbd {
+      background: var(--btn-fn-bg);
+      border: 1px solid var(--btn-fn-border);
+      border-radius: 4px;
+      padding: 1px 4px;
+      font-size: 0.65rem;
+      font-family: inherit;
+      color: var(--text-secondary);
+    }
+
+    /* -------------------------------------------------------------
+       MODAL OVERLAYS (Common Glassmorphism)
+       ------------------------------------------------------------- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: var(--text-main);
+    }
+
+    .modal-badge {
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+
+    .close-modal-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.35rem;
+      line-height: 1;
+      padding: 4px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .close-modal-btn:hover {
+      color: var(--text-main);
+      background: var(--btn-fn-hover);
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.65rem 1.1rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .btn-action-primary {
+      background: var(--btn-eq-bg);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4);
+    }
+    .btn-action-primary:hover {
+      background: var(--btn-eq-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-action-secondary {
+      background: var(--btn-fn-bg);
+      border-color: var(--btn-fn-border);
+      color: var(--text-main);
+    }
+    .btn-action-secondary:hover {
+      background: var(--btn-fn-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-action-danger {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: var(--error-color);
+    }
+    .btn-action-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    /* -------------------------------------------------------------
+       TEXT FILE SAVER MODAL (With Copy Button)
+       ------------------------------------------------------------- */
+    .text-saver-card {
+      background: var(--vault-modal-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 1.75rem;
+      width: 480px;
+      max-width: 100%;
+      box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6);
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      transform: scale(0.92) translateY(20px);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.open .text-saver-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .note-textarea {
+      width: 100%;
+      height: 180px;
+      background: var(--display-bg);
+      border: 1px solid var(--display-border);
+      border-radius: 16px;
+      padding: 1rem;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+    .note-textarea:focus {
+      border-color: var(--accent-color);
+    }
+
+    .modal-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    /* -------------------------------------------------------------
+       HIDDEN SECURE VAULT MODAL (Files & Videos under 2GB)
+       ------------------------------------------------------------- */
+    .vault-card {
+      background: var(--vault-modal-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      width: 780px;
+      max-width: 96vw;
+      height: 85vh;
+      max-height: 760px;
+      box-shadow: 0 40px 90px rgba(0, 0, 0, 0.75);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transform: scale(0.92) translateY(20px);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.open .vault-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .vault-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.25rem 1.75rem;
+      border-bottom: 1px solid var(--display-border);
+      background: rgba(0, 0, 0, 0.15);
+    }
+
+    .vault-branding {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .vault-badge-secure {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success-color);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .vault-nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      border-bottom: 1px solid var(--display-border);
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .vault-tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+
+    .vault-tab-btn:hover {
+      color: var(--text-main);
+      background: var(--btn-fn-hover);
+    }
+
+    .vault-tab-btn.active {
+      color: var(--accent-color);
+      background: var(--badge-bg);
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .vault-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .vault-upload-zone {
+      border: 2px dashed var(--btn-op-border);
+      background: rgba(245, 158, 11, 0.04);
+      border-radius: 20px;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .vault-upload-zone:hover,
+    .vault-upload-zone.dragover {
+      border-color: var(--accent-color);
+      background: rgba(245, 158, 11, 0.09);
+      transform: scale(0.99);
+    }
+
+    .upload-icon {
+      font-size: 2.2rem;
+      color: var(--accent-color);
+    }
+
+    .upload-text {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .upload-subtext {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .storage-info-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      padding: 0 0.25rem;
+    }
+
+    .files-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 1rem;
+    }
+
+    .file-card {
+      background: var(--vault-item-bg);
+      border: 1px solid var(--vault-item-border);
+      border-radius: 16px;
+      padding: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .file-card:hover {
+      border-color: var(--accent-color);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .file-preview-box {
+      width: 100%;
+      height: 110px;
+      background: rgba(0, 0, 0, 0.25);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+    .file-preview-box video,
+    .file-preview-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .file-icon-placeholder {
+      font-size: 2.5rem;
+      color: var(--text-muted);
+    }
+
+    .file-info-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-info-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .file-card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      margin-top: 0.25rem;
+    }
+
+    .file-action-btn {
+      background: var(--btn-fn-bg);
+      border: 1px solid var(--btn-fn-border);
+      color: var(--text-secondary);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+    }
+    .file-action-btn:hover {
+      color: var(--text-main);
+      background: var(--btn-fn-hover);
+    }
+    .file-action-btn.delete:hover {
+      color: var(--error-color);
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .notes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .vault-note-card {
+      background: var(--vault-item-bg);
+      border: 1px solid var(--vault-item-border);
+      border-radius: 16px;
+      padding: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .vault-note-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .vault-note-slot {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-color);
+    }
+
+    .vault-note-preview {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      max-height: 70px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: pre-line;
+    }
+
+    .vault-settings-box {
+      background: var(--vault-item-bg);
+      border: 1px solid var(--vault-item-border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      max-width: 520px;
+    }
+
+    .settings-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .settings-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .settings-input {
+      background: var(--display-bg);
+      border: 1px solid var(--display-border);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-size: 1rem;
+      outline: none;
+    }
+    .settings-input:focus {
+      border-color: var(--accent-color);
+    }
+
+    /* Media Player Lightbox / Modal */
+    .media-viewer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(20px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .media-viewer-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .media-viewer-content {
+      max-width: 90vw;
+      max-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .media-viewer-content video {
+      max-width: 90vw;
+      max-height: 80vh;
+      border-radius: 16px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+      outline: none;
+    }
+    .media-viewer-content img {
+      max-width: 90vw;
+      max-height: 80vh;
+      border-radius: 16px;
+      object-fit: contain;
+    }
+
+    .media-viewer-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 2rem;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 1.5rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+    .media-viewer-close:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.1);
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 9999;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      background: var(--panel-bg);
+      border: 1px solid var(--accent-color);
+      color: var(--text-main);
+      padding: 0.75rem 1.25rem;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      animation: toastIn 0.3s cubic-bezier(0.16, 1, 0.3, 1), toastOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) 2.7s forwards;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(20px) scale(0.9); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes toastOut {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(-10px) scale(0.9); }
+    }
+
+    /* -------------------------------------------------------------
+       Responsive Design (Mobile)
+       ------------------------------------------------------------- */
+    @media (max-width: 720px) {
+      .app-wrapper {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .calculator-card {
+        width: 100%;
+        max-width: 380px;
+      }
+
+      .history-panel {
+        width: 100%;
+        max-width: 380px;
+        transform: translateY(-10px);
+        transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                    opacity 0.3s ease,
+                    transform 0.4s ease,
+                    padding 0.4s ease;
+        max-height: 0;
+      }
+
+      .history-panel.open {
+        max-width: 380px;
+        max-height: 340px;
+        transform: translateY(0);
+      }
+
+      .vault-card {
+        height: 94vh;
+        border-radius: 20px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-wrapper">
+    <!-- Calculator Card -->
+    <main class="calculator-card" id="calculator" role="region" aria-label="Calculator">
+      
+      <!-- Header Controls -->
+      <header class="calc-header">
+        <div class="brand">
+          <span class="brand-dot" aria-hidden="true"></span>
+          <span>NeoCalc</span>
+        </div>
+        <div class="header-actions">
+          <!-- History Toggle Button -->
+          <button class="icon-btn" id="btn-toggle-history" aria-label="Toggle calculation history panel" title="History (H)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span class="history-badge" id="history-badge">0</span>
+          </button>
+          
+          <!-- Theme Toggle Button (Light/Dark) -->
+          <button class="icon-btn" id="btn-toggle-theme" aria-label="Toggle light and dark color themes" title="Toggle Light/Dark Theme (T)">
+            <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+            <svg id="theme-icon-sun" style="display:none;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Display Screen Area -->
+      <section class="display-container" aria-label="Calculator display">
+        <div class="display-preview" id="display-preview" aria-live="polite"></div>
+        <div class="display-main-wrapper">
+          <div class="display-main" id="display-main" aria-live="assertive">0</div>
+          <div class="display-message" id="display-message" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- Keypad Grid (With explicit * and # buttons!) -->
+      <section class="keypad" role="group" aria-label="Calculator keypad">
+        <!-- Row 1 -->
+        <button class="calc-btn btn-fn" id="btn-clear" data-action="clear" aria-label="Clear all (Escape or C)">C</button>
+        <button class="calc-btn btn-fn" id="btn-sign" data-action="sign" aria-label="Toggle positive or negative sign (±)">±</button>
+        <button class="calc-btn btn-fn" id="btn-percent" data-action="percent" aria-label="Percent (%)">%</button>
+        <button class="calc-btn btn-op" id="btn-divide" data-action="operator" data-op="÷" aria-label="Divide (/)">÷</button>
+
+        <!-- Row 2 -->
+        <button class="calc-btn btn-num" data-action="digit" data-digit="7" aria-label="7 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          7
+        </button>
+        <button class="calc-btn btn-num" data-action="digit" data-digit="8" aria-label="8 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          8
+        </button>
+        <button class="calc-btn btn-num" data-action="digit" data-digit="9" aria-label="9 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          9
+        </button>
+        <button class="calc-btn btn-op" id="btn-multiply" data-action="operator" data-op="×" aria-label="Multiply (* or x)">×</button>
+
+        <!-- Row 3 -->
+        <button class="calc-btn btn-num" data-action="digit" data-digit="4" aria-label="4 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          4
+        </button>
+        <button class="calc-btn btn-num" data-action="digit" data-digit="5" aria-label="5 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          5
+        </button>
+        <button class="calc-btn btn-num" data-action="digit" data-digit="6" aria-label="6 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          6
+        </button>
+        <button class="calc-btn btn-op" id="btn-subtract" data-action="operator" data-op="−" aria-label="Subtract (-)">−</button>
+
+        <!-- Row 4 -->
+        <button class="calc-btn btn-num" data-action="digit" data-digit="1" aria-label="1 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          1
+        </button>
+        <button class="calc-btn btn-num" data-action="digit" data-digit="2" aria-label="2 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          2
+        </button>
+        <button class="calc-btn btn-num" data-action="digit" data-digit="3" aria-label="3 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          3
+        </button>
+        <button class="calc-btn btn-op" id="btn-add" data-action="operator" data-op="+" aria-label="Add (+)">+</button>
+
+        <!-- Row 5: Explicit * and # Buttons around 0! -->
+        <button class="calc-btn btn-fn" id="btn-star" data-action="star" aria-label="Star / Vault Key (*)">*</button>
+        <button class="calc-btn btn-num" data-action="digit" data-digit="0" aria-label="0 (Hold for Secret Note)">
+          <span class="hold-progress-ring"></span>
+          0
+        </button>
+        <button class="calc-btn btn-fn" id="btn-hash" data-action="hash" aria-label="Hash / Vault Key (#)">#</button>
+        <button class="calc-btn btn-num" data-action="decimal" aria-label="Decimal point (.)">.</button>
+
+        <!-- Row 6: Wide Action Equals Bar -->
+        <button class="calc-btn btn-equals span-4" id="btn-equals" data-action="equals" aria-label="Calculate equals (Enter or =)">=</button>
+      </section>
+
+      <!-- Keyboard Hint -->
+      <footer class="keyboard-hint" aria-hidden="true">
+        <span>Vault Unlock:</span>
+        <kbd class="kbd">*code#</kbd>
+        <span style="margin: 0 2px;">•</span>
+        <span>Hold any # for Notes</span>
+      </footer>
+    </main>
+
+    <!-- History Slideout Panel -->
+    <aside class="history-panel" id="history-panel" role="region" aria-label="Calculation History" aria-hidden="true">
+      <div class="history-header">
+        <h2 class="history-title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          History
+        </h2>
+        <button class="history-clear-btn" id="btn-clear-history" aria-label="Clear all calculation history">Clear All</button>
+      </div>
+      <ul class="history-list" id="history-list" role="list">
+        <li class="history-empty">No past calculations yet</li>
+      </ul>
+    </aside>
+  </div>
+
+  <!-- -------------------------------------------------------------
+       MODAL 1: Secret Text File Saver (With COPY Button!)
+       ------------------------------------------------------------- -->
+  <div class="modal-overlay" id="text-saver-modal" role="dialog" aria-modal="true" aria-labelledby="text-saver-title">
+    <div class="text-saver-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="text-saver-title">
+          <span>📝 Secret Text Saver</span>
+          <span class="modal-badge" id="text-saver-slot-badge">Slot #1</span>
+        </h3>
+        <button class="close-modal-btn" id="btn-close-text-saver" aria-label="Close text saver">&times;</button>
+      </div>
+      
+      <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: -0.5rem;">
+        Private note tied to key <strong id="text-saver-key-name">1</strong>. Save to vault, copy to clipboard, or download as .txt.
+      </p>
+
+      <textarea class="note-textarea" id="note-textarea" placeholder="Type your secret text, passwords, notes, or messages here..."></textarea>
+
+      <div class="modal-actions">
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn-action btn-action-primary" id="btn-save-note">💾 Save Note</button>
+          <button class="btn-action btn-action-secondary" id="btn-copy-note">📋 Copy Text</button>
+          <button class="btn-action btn-action-secondary" id="btn-export-txt">📥 Download .txt</button>
+        </div>
+        <button class="btn-action btn-action-danger" id="btn-delete-note">🗑 Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- -------------------------------------------------------------
+       MODAL 2: Hidden Secure Vault (Files & Videos under 2GB)
+       ------------------------------------------------------------- -->
+  <div class="modal-overlay" id="vault-modal" role="dialog" aria-modal="true" aria-labelledby="vault-title">
+    <div class="vault-card">
+      <!-- Vault Topbar -->
+      <div class="vault-topbar">
+        <div class="vault-branding">
+          <h2 class="modal-title" id="vault-title" style="font-size: 1.25rem;">
+            <span>🔐 Secure Secret Vault</span>
+          </h2>
+          <span class="vault-badge-secure">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--success-color);"></span>
+            Encrypted Storage
+          </span>
+        </div>
+        <button class="btn-action btn-action-secondary" id="btn-lock-vault">🔒 Lock & Exit</button>
+      </div>
+
+      <!-- Vault Navigation Tabs -->
+      <nav class="vault-nav-tabs">
+        <button class="vault-tab-btn active" data-tab="media">🎬 Files & Videos</button>
+        <button class="vault-tab-btn" data-tab="notes">📝 All Secret Notes (0-9)</button>
+        <button class="vault-tab-btn" data-tab="settings">⚙️ Vault Security</button>
+      </nav>
+
+      <!-- Vault Content Body -->
+      <div class="vault-body">
+        
+        <!-- Tab 1: Files & Media -->
+        <section id="vault-tab-media" class="vault-tab-content">
+          <!-- Upload Zone -->
+          <div class="vault-upload-zone" id="vault-drop-zone">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Drag & drop files or videos here (under 2GB)</div>
+            <div class="upload-subtext">Supports MP4, WebM, MOV, Images, PDFs, Documents, and Archives</div>
+            <button class="btn-action btn-action-primary" id="btn-select-files" style="margin-top: 0.5rem;">
+              Browse Files to Store
+            </button>
+            <input type="file" id="vault-file-input" multiple style="display: none;">
+          </div>
+
+          <!-- Storage Meter -->
+          <div class="storage-info-bar" style="margin: 1rem 0 0.5rem 0;">
+            <span id="vault-storage-used">Storage: 0 MB used</span>
+            <span>Max file size: 2 GB</span>
+          </div>
+
+          <!-- Stored Files Grid -->
+          <div class="files-grid" id="vault-files-grid">
+            <!-- Rendered dynamically -->
+          </div>
+        </section>
+
+        <!-- Tab 2: Secret Notes -->
+        <section id="vault-tab-notes" class="vault-tab-content" style="display: none;">
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+            All 10 fast-access text notes linked to numbers <strong>0 through 9</strong>. Click on any note to open or edit it.
+          </p>
+          <div class="notes-grid" id="vault-notes-grid">
+            <!-- Rendered dynamically -->
+          </div>
+        </section>
+
+        <!-- Tab 3: Security & Password Settings -->
+        <section id="vault-tab-settings" class="vault-tab-content" style="display: none;">
+          <div class="vault-settings-box">
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Vault Password Settings</h3>
+            <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+              Unlock your vault at any time on the calculator by entering: 
+              <br><strong style="color: var(--accent-color);">*[your code]#</strong>
+            </p>
+
+            <div class="settings-field">
+              <label class="settings-label" for="current-password-display">Current Vault Code:</label>
+              <input type="text" class="settings-input" id="current-password-display" readonly>
+            </div>
+
+            <div class="settings-field">
+              <label class="settings-label" for="new-password-input">Change Password to:</label>
+              <input type="text" class="settings-input" id="new-password-input" placeholder="Enter new secret code...">
+            </div>
+
+            <button class="btn-action btn-action-primary" id="btn-update-password" style="align-self: flex-start;">
+              Update Password
+            </button>
+
+            <hr style="border: none; border-top: 1px solid var(--vault-item-border); margin: 0.5rem 0;">
+
+            <div class="settings-field">
+              <label class="settings-label" style="color: var(--error-color);">Danger Zone</label>
+              <p style="font-size: 0.75rem; color: var(--text-muted);">Permanently deletes all files, videos, and secret notes stored in this vault.</p>
+              <button class="btn-action btn-action-danger" id="btn-wipe-vault" style="align-self: flex-start; margin-top: 0.3rem;">
+                ⚠️ Wipe Entire Vault
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- -------------------------------------------------------------
+       MODAL 3: Video & Media Lightbox Viewer
+       ------------------------------------------------------------- -->
+  <div class="media-viewer-overlay" id="media-viewer-overlay">
+    <button class="media-viewer-close" id="media-viewer-close" aria-label="Close media viewer">&times;</button>
+    <div class="media-viewer-content" id="media-viewer-content">
+      <!-- Video or Image injected dynamically -->
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- -------------------------------------------------------------
+       Vanilla JavaScript
+       ------------------------------------------------------------- -->
+  <script>
+    'use strict';
+
+    /**
+     * =========================================================================
+     * 1. TOKENIZER & RECURSIVE-DESCENT PARSER (NO eval() OR new Function())
+     * =========================================================================
+     */
+    const TokenType = {
+      NUMBER: 'NUMBER',
+      PLUS: 'PLUS',
+      MINUS: 'MINUS',
+      MULTIPLY: 'MULTIPLY',
+      DIVIDE: 'DIVIDE',
+      LPAREN: 'LPAREN',
+      RPAREN: 'RPAREN',
+      EOF: 'EOF'
+    };
+
+    function tokenize(input) {
+      const tokens = [];
+      let i = 0;
+      const str = input.replace(/\s+/g, '');
+
+      while (i < str.length) {
+        const char = str[i];
+
+        if (char === '+') {
+          tokens.push({ type: TokenType.PLUS, value: '+' });
+          i++;
+        } else if (char === '-' || char === '−') {
+          tokens.push({ type: TokenType.MINUS, value: '−' });
+          i++;
+        } else if (char === '*' || char === '×' || char === 'x') {
+          tokens.push({ type: TokenType.MULTIPLY, value: '×' });
+          i++;
+        } else if (char === '/' || char === '÷') {
+          tokens.push({ type: TokenType.DIVIDE, value: '÷' });
+          i++;
+        } else if (char === '(') {
+          tokens.push({ type: TokenType.LPAREN, value: '(' });
+          i++;
+        } else if (char === ')') {
+          tokens.push({ type: TokenType.RPAREN, value: ')' });
+          i++;
+        } else if (/\d|\./.test(char)) {
+          let numStr = '';
+          let hasDot = false;
+          while (i < str.length && (/\d/.test(str[i]) || (str[i] === '.' && !hasDot))) {
+            if (str[i] === '.') hasDot = true;
+            numStr += str[i];
+            i++;
+          }
+          const numValue = parseFloat(numStr);
+          if (isNaN(numValue)) {
+            throw new Error('Invalid number format: ' + numStr);
+          }
+          tokens.push({ type: TokenType.NUMBER, value: numValue, raw: numStr });
+        } else {
+          throw new Error('Unexpected character: ' + char);
+        }
+      }
+
+      tokens.push({ type: TokenType.EOF, value: null });
+      return tokens;
+    }
+
+    class Parser {
+      constructor(tokens) {
+        this.tokens = tokens;
+        this.current = 0;
+      }
+
+      peek() {
+        return this.tokens[this.current] || { type: TokenType.EOF };
+      }
+
+      previous() {
+        return this.tokens[this.current - 1];
+      }
+
+      isAtEnd() {
+        return this.peek().type === TokenType.EOF;
+      }
+
+      check(type) {
+        if (this.isAtEnd()) return false;
+        return this.peek().type === type;
+      }
+
+      match(...types) {
+        for (const type of types) {
+          if (this.check(type)) {
+            this.current++;
+            return true;
+          }
+        }
+        return false;
+      }
+
+      consume(type, errorMessage) {
+        if (this.check(type)) {
+          this.current++;
+          return this.previous();
+        }
+        throw new Error(errorMessage || `Expected token ${type}`);
+      }
+
+      parse() {
+        if (this.isAtEnd() || this.peek().type === TokenType.EOF) return 0;
+        const result = this.parseExpression();
+        if (!this.isAtEnd() && this.peek().type !== TokenType.EOF) {
+          throw new Error('Unexpected token after expression: ' + this.peek().value);
+        }
+        return result;
+      }
+
+      parseExpression() {
+        let left = this.parseTerm();
+
+        while (this.match(TokenType.PLUS, TokenType.MINUS)) {
+          const operator = this.previous().type;
+          const right = this.parseTerm();
+          if (operator === TokenType.PLUS) {
+            left = left + right;
+          } else {
+            left = left - right;
+          }
+        }
+
+        return left;
+      }
+
+      parseTerm() {
+        let left = this.parseFactor();
+
+        while (this.match(TokenType.MULTIPLY, TokenType.DIVIDE)) {
+          const operator = this.previous().type;
+          const right = this.parseFactor();
+
+          if (operator === TokenType.MULTIPLY) {
+            left = left * right;
+          } else {
+            if (right === 0) {
+              throw new Error('Cannot divide by zero');
+            }
+            left = left / right;
+          }
+        }
+
+        return left;
+      }
+
+      parseFactor() {
+        let sign = 1;
+        while (this.match(TokenType.PLUS, TokenType.MINUS)) {
+          if (this.previous().type === TokenType.MINUS) {
+            sign = -sign;
+          }
+        }
+
+        if (this.match(TokenType.NUMBER)) {
+          return sign * this.previous().value;
+        }
+
+        if (this.match(TokenType.LPAREN)) {
+          const expr = this.parseExpression();
+          this.consume(TokenType.RPAREN, "Expected ')' after expression");
+          return sign * expr;
+        }
+
+        throw new Error('Expected number or expression');
+      }
+    }
+
+    function evaluateExpression(str) {
+      if (!str || !str.trim()) return 0;
+      const tokens = tokenize(str);
+      const parser = new Parser(tokens);
+      return parser.parse();
+    }
+
+    function formatNumberResult(num) {
+      if (!Number.isFinite(num)) {
+        throw new Error('Invalid number');
+      }
+      const rounded = parseFloat(num.toPrecision(12));
+      return String(rounded);
+    }
+
+    /**
+     * =========================================================================
+     * 2. THEME SYSTEM (LIGHT & DARK THEMES WITH SYSTEM PREFERENCE)
+     * =========================================================================
+     */
+    function initTheme() {
+      const savedTheme = localStorage.getItem('neocalc_theme');
+      if (savedTheme) {
+        setTheme(savedTheme);
+      } else {
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setTheme(prefersDark ? 'dark' : 'light');
+      }
+
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (!localStorage.getItem('neocalc_theme')) {
+          setTheme(e.matches ? 'dark' : 'light');
+        }
+      });
+    }
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      const moon = document.getElementById('theme-icon-moon');
+      const sun = document.getElementById('theme-icon-sun');
+      if (theme === 'light') {
+        sun.style.display = 'none';
+        moon.style.display = 'block';
+      } else {
+        sun.style.display = 'block';
+        moon.style.display = 'none';
+      }
+      localStorage.setItem('neocalc_theme', theme);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      setTheme(next);
+      showToast(`Switched to ${next === 'dark' ? 'Dark' : 'Light'} theme`, 'info');
+    }
+
+    /**
+     * =========================================================================
+     * 3. INDEXEDDB PERSISTENCE (UP TO 2GB PER FILE & VIDEO)
+     * =========================================================================
+     */
+    const DB_NAME = 'NeoCalcVaultDB';
+    const DB_VERSION = 1;
+    let dbInstance = null;
+
+    function openVaultDB() {
+      return new Promise((resolve, reject) => {
+        if (dbInstance) return resolve(dbInstance);
+
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('files')) {
+            db.createObjectStore('files', { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains('notes')) {
+            db.createObjectStore('notes', { keyPath: 'slot' });
+          }
+        };
+
+        request.onsuccess = (e) => {
+          dbInstance = e.target.result;
+          resolve(dbInstance);
+        };
+
+        request.onerror = (e) => {
+          console.error('IndexedDB error:', e);
+          reject(e);
+        };
+      });
+    }
+
+    async function dbSaveFile(fileRecord) {
+      const db = await openVaultDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('files', 'readwrite');
+        const store = tx.objectStore('files');
+        store.put(fileRecord);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function dbGetAllFiles() {
+      const db = await openVaultDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('files', 'readonly');
+        const store = tx.objectStore('files');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbDeleteFile(fileId) {
+      const db = await openVaultDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('files', 'readwrite');
+        const store = tx.objectStore('files');
+        store.delete(fileId);
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function dbSaveNote(slot, content) {
+      const db = await openVaultDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('notes', 'readwrite');
+        const store = tx.objectStore('notes');
+        store.put({ slot: String(slot), content, updatedAt: Date.now() });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    async function dbGetNote(slot) {
+      const db = await openVaultDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('notes', 'readonly');
+        const store = tx.objectStore('notes');
+        const req = store.get(String(slot));
+        req.onsuccess = () => resolve(req.result ? req.result.content : '');
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbGetAllNotes() {
+      const db = await openVaultDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('notes', 'readonly');
+        const store = tx.objectStore('notes');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function dbWipeAll() {
+      const db = await openVaultDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(['files', 'notes'], 'readwrite');
+        tx.objectStore('files').clear();
+        tx.objectStore('notes').clear();
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    /**
+     * =========================================================================
+     * 4. VAULT SECURITY & PASSWORD MANAGEMENT
+     * =========================================================================
+     */
+    const DEFAULT_VAULT_PIN = '1234';
+
+    function getVaultPassword() {
+      return localStorage.getItem('neocalc_vault_pin') || DEFAULT_VAULT_PIN;
+    }
+
+    function setVaultPassword(newPin) {
+      const clean = newPin.trim();
+      if (!clean) return false;
+      localStorage.setItem('neocalc_vault_pin', clean);
+      return true;
+    }
+
+    function isVaultPasswordSet() {
+      return !!localStorage.getItem('neocalc_vault_pin');
+    }
+
+    /**
+     * =========================================================================
+     * 5. APPLICATION STATE & LOGIC
+     * =========================================================================
+     */
+    const State = {
+      tokens: ['0'],
+      hasCalculated: false,
+      activeOperator: null,
+      history: [],
+      isHistoryOpen: false,
+      isAnimatingOdometer: false,
+      odometerAnimId: null,
+      errorState: null,
+
+      activeNoteSlot: null,
+      activeMediaBlobUrl: null
+    };
+
+    // DOM Elements
+    const elDisplayMain = document.getElementById('display-main');
+    const elDisplayPreview = document.getElementById('display-preview');
+    const elDisplayMessage = document.getElementById('display-message');
+    const elHistoryPanel = document.getElementById('history-panel');
+    const elHistoryList = document.getElementById('history-list');
+    const elHistoryBadge = document.getElementById('history-badge');
+    const elBtnToggleHistory = document.getElementById('btn-toggle-history');
+    const elBtnClearHistory = document.getElementById('btn-clear-history');
+    const elBtnToggleTheme = document.getElementById('btn-toggle-theme');
+    const operatorButtons = document.querySelectorAll('.btn-op');
+
+    // Modals
+    const elTextSaverModal = document.getElementById('text-saver-modal');
+    const elNoteTextarea = document.getElementById('note-textarea');
+    const elTextSaverSlotBadge = document.getElementById('text-saver-slot-badge');
+    const elTextSaverKeyName = document.getElementById('text-saver-key-name');
+    const elBtnCloseTextSaver = document.getElementById('btn-close-text-saver');
+    const elBtnSaveNote = document.getElementById('btn-save-note');
+    const elBtnCopyNote = document.getElementById('btn-copy-note');
+    const elBtnExportTxt = document.getElementById('btn-export-txt');
+    const elBtnDeleteNote = document.getElementById('btn-delete-note');
+
+    const elVaultModal = document.getElementById('vault-modal');
+    const elBtnLockVault = document.getElementById('btn-lock-vault');
+    const elVaultDropZone = document.getElementById('vault-drop-zone');
+    const elVaultFileInput = document.getElementById('vault-file-input');
+    const elBtnSelectFiles = document.getElementById('btn-select-files');
+    const elVaultFilesGrid = document.getElementById('vault-files-grid');
+    const elVaultStorageUsed = document.getElementById('vault-storage-used');
+    const elVaultNotesGrid = document.getElementById('vault-notes-grid');
+    const elCurrentPasswordDisplay = document.getElementById('current-password-display');
+    const elNewPasswordInput = document.getElementById('new-password-input');
+    const elBtnUpdatePassword = document.getElementById('btn-update-password');
+    const elBtnWipeVault = document.getElementById('btn-wipe-vault');
+
+    const elMediaViewerOverlay = document.getElementById('media-viewer-overlay');
+    const elMediaViewerClose = document.getElementById('media-viewer-close');
+    const elMediaViewerContent = document.getElementById('media-viewer-content');
+    const elToastContainer = document.getElementById('toast-container');
+
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = 'toast-item';
+      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+      toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+      elToastContainer.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    function setupStaggeredButtonAnimation() {
+      const allButtons = document.querySelectorAll('.calc-btn');
+      allButtons.forEach((btn, index) => {
+        btn.style.animationDelay = `${index * 20}ms`;
+      });
+    }
+
+    function toggleHistoryPanel() {
+      State.isHistoryOpen = !State.isHistoryOpen;
+      if (State.isHistoryOpen) {
+        elHistoryPanel.classList.add('open');
+        elHistoryPanel.setAttribute('aria-hidden', 'false');
+      } else {
+        elHistoryPanel.classList.remove('open');
+        elHistoryPanel.setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    function updateHistoryBadge() {
+      const count = State.history.length;
+      elHistoryBadge.textContent = count;
+      if (count > 0) {
+        elHistoryBadge.classList.add('show');
+      } else {
+        elHistoryBadge.classList.remove('show');
+      }
+    }
+
+    function addToHistory(expression, result) {
+      State.history.unshift({
+        id: Date.now(),
+        expression,
+        result
+      });
+      if (State.history.length > 30) State.history.pop();
+      renderHistoryList();
+      updateHistoryBadge();
+    }
+
+    function renderHistoryList() {
+      if (State.history.length === 0) {
+        elHistoryList.innerHTML = '<li class="history-empty">No past calculations yet</li>';
+        return;
+      }
+
+      elHistoryList.innerHTML = '';
+      State.history.forEach(item => {
+        const li = document.createElement('li');
+        li.className = 'history-item';
+        li.tabIndex = 0;
+        li.setAttribute('role', 'button');
+        li.setAttribute('aria-label', `Load ${item.expression} = ${item.result}`);
+
+        const exprDiv = document.createElement('div');
+        exprDiv.className = 'history-item-expr';
+        exprDiv.textContent = `${item.expression} =`;
+
+        const resDiv = document.createElement('div');
+        resDiv.className = 'history-item-res';
+        resDiv.textContent = item.result;
+
+        li.appendChild(exprDiv);
+        li.appendChild(resDiv);
+
+        const selectHistoryItem = () => {
+          loadHistoryItem(item.result);
+        };
+
+        li.addEventListener('click', selectHistoryItem);
+        li.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectHistoryItem();
+          }
+        });
+
+        elHistoryList.appendChild(li);
+      });
+    }
+
+    function clearHistory() {
+      State.history = [];
+      renderHistoryList();
+      updateHistoryBadge();
+    }
+
+    function loadHistoryItem(resultValue) {
+      clearError();
+      State.tokens = [String(resultValue)];
+      State.hasCalculated = true;
+      State.activeOperator = null;
+      updateActiveOperatorUI();
+      updateDisplayUI({ animateDigit: true });
+    }
+
+    function isOperator(item) {
+      return item === '+' || item === '−' || item === '×' || item === '÷' || item === '-' || item === '*' || item === '/';
+    }
+
+    function clearError() {
+      if (State.errorState) {
+        State.errorState = null;
+        elDisplayMain.classList.remove('display-error');
+        elDisplayMessage.classList.remove('show');
+        elDisplayMessage.textContent = '';
+      }
+    }
+
+    function showError(message) {
+      State.errorState = message;
+      elDisplayMain.textContent = 'Error';
+      elDisplayMain.classList.add('display-error');
+      elDisplayMessage.textContent = message || 'Cannot divide by zero';
+      elDisplayMessage.classList.add('show');
+      elDisplayPreview.textContent = '';
+      State.activeOperator = null;
+      updateActiveOperatorUI();
+    }
+
+    function adjustDisplayFontSize(text) {
+      const len = text.length;
+      if (len <= 9) {
+        elDisplayMain.style.fontSize = '2.35rem';
+      } else if (len <= 12) {
+        elDisplayMain.style.fontSize = '1.95rem';
+      } else if (len <= 15) {
+        elDisplayMain.style.fontSize = '1.65rem';
+      } else if (len <= 18) {
+        elDisplayMain.style.fontSize = '1.35rem';
+      } else {
+        elDisplayMain.style.fontSize = '1.15rem';
+      }
+    }
+
+    function computeLivePreview() {
+      if (State.errorState) return '';
+      if (State.tokens.length === 0) return '';
+
+      const expr = State.tokens.join('');
+      if (expr.startsWith('*') || expr.startsWith('×')) {
+        return '🔐 Vault Code Input...';
+      }
+
+      let previewTokens = [...State.tokens];
+
+      while (previewTokens.length > 0 && isOperator(previewTokens[previewTokens.length - 1])) {
+        previewTokens.pop();
+      }
+
+      if (previewTokens.length === 0) return '';
+
+      if (previewTokens.length === 1 && !State.tokens.some(t => isOperator(t))) {
+        return '';
+      }
+
+      const expressionString = previewTokens.join(' ');
+      try {
+        const val = evaluateExpression(expressionString);
+        const formatted = formatNumberResult(val);
+        return `= ${formatted}`;
+      } catch (err) {
+        return '';
+      }
+    }
+
+    function updateDisplayUI(options = {}) {
+      if (State.errorState) return;
+
+      const fullExpression = State.tokens.join(' ');
+      
+      if (options.animateDigit && !options.skipPop) {
+        elDisplayMain.innerHTML = `<span class="digit-pop">${fullExpression}</span>`;
+      } else {
+        elDisplayMain.textContent = fullExpression;
+      }
+
+      adjustDisplayFontSize(fullExpression);
+
+      const preview = computeLivePreview();
+      elDisplayPreview.textContent = preview;
+    }
+
+    function updateActiveOperatorUI() {
+      operatorButtons.forEach(btn => {
+        const op = btn.getAttribute('data-op');
+        if (State.activeOperator && op === State.activeOperator) {
+          btn.classList.add('active-op');
+        } else {
+          btn.classList.remove('active-op');
+        }
+      });
+    }
+
+    /**
+     * =========================================================================
+     * 6. SECRET VAULT CODE INTERCEPTION (*code#)
+     * =========================================================================
+     */
+    function checkSecretCodeTrigger(fullStr) {
+      const normalized = fullStr.replace(/×/g, '*').replace(/\s+/g, '');
+      const match = normalized.match(/\*([^*#]+)#$/);
+      if (!match) return false;
+
+      const enteredPin = match[1];
+      const targetPin = getVaultPassword();
+
+      if (!isVaultPasswordSet()) {
+        setVaultPassword(enteredPin);
+        showToast(`🎉 Vault Password set to "${enteredPin}"!`, 'success');
+        openVaultModal();
+        resetCalculator();
+        return true;
+      }
+
+      if (enteredPin === targetPin) {
+        showToast('🔓 Vault Unlocked!', 'success');
+        openVaultModal();
+        resetCalculator();
+        return true;
+      } else {
+        showToast('❌ Incorrect Vault Code', 'error');
+        showError('Invalid Vault Code');
+        setTimeout(() => {
+          clearError();
+          resetCalculator();
+        }, 1200);
+        return true;
+      }
+    }
+
+    function resetCalculator() {
+      State.tokens = ['0'];
+      State.hasCalculated = false;
+      State.activeOperator = null;
+      updateActiveOperatorUI();
+      updateDisplayUI();
+    }
+
+    /**
+     * =========================================================================
+     * 7. USER INPUT HANDLERS & CALCULATOR ACTIONS
+     * =========================================================================
+     */
+    function inputDigit(digit) {
+      clearError();
+
+      if (State.hasCalculated) {
+        State.tokens = [digit];
+        State.hasCalculated = false;
+        State.activeOperator = null;
+        updateActiveOperatorUI();
+        updateDisplayUI({ animateDigit: true });
+        return;
+      }
+
+      const lastIndex = State.tokens.length - 1;
+      const lastToken = State.tokens[lastIndex];
+
+      if (isOperator(lastToken)) {
+        State.tokens.push(digit);
+        State.activeOperator = null;
+        updateActiveOperatorUI();
+      } else {
+        if (lastToken === '0') {
+          State.tokens[lastIndex] = digit;
+        } else if (lastToken === '-0') {
+          State.tokens[lastIndex] = '-' + digit;
+        } else {
+          State.tokens[lastIndex] = lastToken + digit;
+        }
+      }
+
+      updateDisplayUI({ animateDigit: true });
+    }
+
+    function inputDecimal() {
+      clearError();
+
+      if (State.hasCalculated) {
+        State.tokens = ['0.'];
+        State.hasCalculated = false;
+        State.activeOperator = null;
+        updateActiveOperatorUI();
+        updateDisplayUI({ animateDigit: true });
+        return;
+      }
+
+      const lastIndex = State.tokens.length - 1;
+      const lastToken = State.tokens[lastIndex];
+
+      if (isOperator(lastToken)) {
+        State.tokens.push('0.');
+        State.activeOperator = null;
+        updateActiveOperatorUI();
+      } else {
+        if (!lastToken.includes('.')) {
+          State.tokens[lastIndex] = lastToken + '.';
+        }
+      }
+
+      updateDisplayUI({ animateDigit: true });
+    }
+
+    function inputOperator(op) {
+      clearError();
+
+      if (State.hasCalculated) {
+        State.hasCalculated = false;
+      }
+
+      const lastIndex = State.tokens.length - 1;
+      const lastToken = State.tokens[lastIndex];
+
+      if (State.tokens.length === 1 && (lastToken === '0' || lastToken === '')) {
+        if (op === '−' || op === '-') {
+          State.tokens = ['-'];
+          State.activeOperator = null;
+          updateActiveOperatorUI();
+          updateDisplayUI({ animateDigit: true });
+          return;
+        }
+      }
+
+      if (State.tokens.length === 1 && (lastToken === '0' || lastToken === '')) {
+        if (op === '×' || op === '*') {
+          State.tokens = ['*'];
+          State.activeOperator = null;
+          updateActiveOperatorUI();
+          updateDisplayUI({ animateDigit: true });
+          return;
+        }
+      }
+
+      if (isOperator(lastToken)) {
+        State.tokens[lastIndex] = op;
+      } else {
+        if (lastToken.endsWith('.')) {
+          State.tokens[lastIndex] = lastToken.slice(0, -1);
+        }
+        State.tokens.push(op);
+      }
+
+      State.activeOperator = op;
+      updateActiveOperatorUI();
+      updateDisplayUI();
+    }
+
+    function inputStar() {
+      clearError();
+
+      const lastIndex = State.tokens.length - 1;
+      const lastToken = State.tokens[lastIndex];
+
+      if (State.tokens.length === 1 && (lastToken === '0' || lastToken === '')) {
+        State.tokens = ['*'];
+      } else if (isOperator(lastToken)) {
+        State.tokens[lastIndex] = '*';
+      } else {
+        State.tokens.push('*');
+      }
+
+      updateDisplayUI({ animateDigit: true });
+    }
+
+    function inputHash() {
+      clearError();
+      const expr = State.tokens.join('') + '#';
+      if (checkSecretCodeTrigger(expr)) {
+        return;
+      }
+
+      State.tokens.push('#');
+      updateDisplayUI({ animateDigit: true });
+    }
+
+    function toggleSign() {
+      clearError();
+
+      const lastIndex = State.tokens.length - 1;
+      const lastToken = State.tokens[lastIndex];
+
+      if (isOperator(lastToken)) {
+        State.tokens.push('-');
+        State.activeOperator = null;
+        updateActiveOperatorUI();
+      } else {
+        if (lastToken.startsWith('-')) {
+          State.tokens[lastIndex] = lastToken.substring(1);
+          if (State.tokens[lastIndex] === '') {
+            State.tokens[lastIndex] = '0';
+          }
+        } else {
+          if (lastToken === '0') {
+            State.tokens[lastIndex] = '-';
+          } else {
+            State.tokens[lastIndex] = '-' + lastToken;
+          }
+        }
+      }
+
+      updateDisplayUI({ animateDigit: true });
+    }
+
+    function applyPercent() {
+      clearError();
+
+      const lastIndex = State.tokens.length - 1;
+      const lastToken = State.tokens[lastIndex];
+
+      if (!isOperator(lastToken) && lastToken !== '-' && lastToken !== '') {
+        const numVal = parseFloat(lastToken);
+        if (!isNaN(numVal)) {
+          const divided = numVal / 100;
+          State.tokens[lastIndex] = formatNumberResult(divided);
+          updateDisplayUI({ animateDigit: true });
+        }
+      }
+    }
+
+    function clearCalculator() {
+      clearError();
+
+      elDisplayMain.classList.add('slide-left-fade');
+      elDisplayPreview.classList.add('slide-left-fade');
+
+      setTimeout(() => {
+        State.tokens = ['0'];
+        State.hasCalculated = false;
+        State.activeOperator = null;
+        updateActiveOperatorUI();
+        
+        elDisplayMain.classList.remove('slide-left-fade');
+        elDisplayPreview.classList.remove('slide-left-fade');
+        elDisplayPreview.textContent = '';
+        updateDisplayUI({ skipPop: true });
+      }, 200);
+    }
+
+    function handleBackspace() {
+      if (State.errorState) {
+        clearCalculator();
+        return;
+      }
+
+      if (State.hasCalculated) {
+        State.tokens = ['0'];
+        State.hasCalculated = false;
+        State.activeOperator = null;
+        updateActiveOperatorUI();
+        updateDisplayUI();
+        return;
+      }
+
+      const lastIndex = State.tokens.length - 1;
+      const lastToken = State.tokens[lastIndex];
+
+      if (isOperator(lastToken)) {
+        State.tokens.pop();
+        State.activeOperator = null;
+        updateActiveOperatorUI();
+      } else {
+        if (lastToken.length > 1) {
+          State.tokens[lastIndex] = lastToken.slice(0, -1);
+          if (State.tokens[lastIndex] === '-') {
+            State.tokens.pop();
+          }
+        } else {
+          State.tokens.pop();
+        }
+      }
+
+      if (State.tokens.length === 0) {
+        State.tokens = ['0'];
+      }
+
+      updateDisplayUI();
+    }
+
+    function runOdometerAnimation(startVal, targetVal, onComplete) {
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReduced || isNaN(startVal) || isNaN(targetVal)) {
+        onComplete(targetVal);
+        return;
+      }
+
+      if (State.odometerAnimId) {
+        cancelAnimationFrame(State.odometerAnimId);
+      }
+
+      State.isAnimatingOdometer = true;
+      const duration = 450;
+      const startTime = performance.now();
+      const diff = targetVal - startVal;
+
+      function step(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const currentVal = startVal + diff * easeOut;
+
+        const intermediate = parseFloat(currentVal.toPrecision(10));
+        elDisplayMain.textContent = String(intermediate);
+        adjustDisplayFontSize(String(intermediate));
+
+        if (progress < 1) {
+          State.odometerAnimId = requestAnimationFrame(step);
+        } else {
+          State.isAnimatingOdometer = false;
+          onComplete(targetVal);
+        }
+      }
+
+      State.odometerAnimId = requestAnimationFrame(step);
+    }
+
+    function calculateResult() {
+      clearError();
+
+      if (State.tokens.length === 0) return;
+
+      const fullStr = State.tokens.join('');
+      if (checkSecretCodeTrigger(fullStr)) {
+        return;
+      }
+
+      while (State.tokens.length > 0 && isOperator(State.tokens[State.tokens.length - 1])) {
+        State.tokens.pop();
+      }
+
+      if (State.tokens.length === 0) {
+        State.tokens = ['0'];
+        updateDisplayUI();
+        return;
+      }
+
+      const expressionString = State.tokens.join(' ');
+
+      try {
+        const numericResult = evaluateExpression(expressionString);
+        const formattedResult = formatNumberResult(numericResult);
+
+        let startNumeric = 0;
+        const firstToken = parseFloat(State.tokens[0]);
+        if (!isNaN(firstToken)) {
+          startNumeric = firstToken;
+        }
+
+        elDisplayPreview.textContent = `${expressionString} =`;
+
+        runOdometerAnimation(startNumeric, numericResult, (finalVal) => {
+          elDisplayMain.textContent = formattedResult;
+          adjustDisplayFontSize(formattedResult);
+          
+          addToHistory(expressionString, formattedResult);
+
+          State.tokens = [formattedResult];
+          State.hasCalculated = true;
+          State.activeOperator = null;
+          updateActiveOperatorUI();
+        });
+
+      } catch (err) {
+        showError(err.message || 'Error');
+        State.hasCalculated = true;
+      }
+    }
+
+    /**
+     * =========================================================================
+     * 8. CLICK & HOLD NUMBER BUTTONS (SECRET TEXT FILE SAVER WITH COPY!)
+     * =========================================================================
+     */
+    let holdTimer = null;
+    let isHoldTriggered = false;
+
+    function setupNumberLongPress() {
+      const numberButtons = document.querySelectorAll('button[data-action="digit"]');
+
+      numberButtons.forEach(btn => {
+        const digit = btn.getAttribute('data-digit');
+
+        const startHold = (e) => {
+          isHoldTriggered = false;
+          btn.classList.add('holding');
+
+          holdTimer = setTimeout(async () => {
+            isHoldTriggered = true;
+            btn.classList.remove('holding');
+            if (navigator.vibrate) navigator.vibrate(50);
+            await openTextSaverModal(digit);
+          }, 550);
+        };
+
+        const cancelHold = () => {
+          btn.classList.remove('holding');
+          if (holdTimer) {
+            clearTimeout(holdTimer);
+            holdTimer = null;
+          }
+        };
+
+        btn.addEventListener('pointerdown', startHold);
+        btn.addEventListener('pointerup', cancelHold);
+        btn.addEventListener('pointerleave', cancelHold);
+        btn.addEventListener('pointercancel', cancelHold);
+      });
+    }
+
+    async function openTextSaverModal(slot) {
+      State.activeNoteSlot = slot;
+      elTextSaverSlotBadge.textContent = `Slot #${slot}`;
+      elTextSaverKeyName.textContent = slot;
+
+      const existingText = await dbGetNote(slot);
+      elNoteTextarea.value = existingText || '';
+
+      elTextSaverModal.classList.add('open');
+      elNoteTextarea.focus();
+    }
+
+    function closeTextSaverModal() {
+      elTextSaverModal.classList.remove('open');
+      State.activeNoteSlot = null;
+    }
+
+    async function saveCurrentNote() {
+      if (State.activeNoteSlot === null) return;
+      const text = elNoteTextarea.value;
+      await dbSaveNote(State.activeNoteSlot, text);
+      showToast(`Saved note to Slot #${State.activeNoteSlot}!`, 'success');
+      closeTextSaverModal();
+      renderVaultNotesGrid();
+    }
+
+    async function copyCurrentNote() {
+      const text = elNoteTextarea.value;
+      if (!text) {
+        showToast('Nothing to copy (note is empty)', 'info');
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (err) {
+        elNoteTextarea.select();
+        document.execCommand('copy');
+      }
+
+      elBtnCopyNote.innerHTML = '✓ Copied!';
+      elBtnCopyNote.style.borderColor = 'var(--success-color)';
+      elBtnCopyNote.style.color = 'var(--success-color)';
+      showToast('Note copied to clipboard!', 'success');
+
+      setTimeout(() => {
+        elBtnCopyNote.innerHTML = '📋 Copy Text';
+        elBtnCopyNote.style.borderColor = '';
+        elBtnCopyNote.style.color = '';
+      }, 2000);
+    }
+
+    function exportNoteAsTxt() {
+      const text = elNoteTextarea.value;
+      const slot = State.activeNoteSlot !== null ? State.activeNoteSlot : 'note';
+      const filename = `secret_note_slot_${slot}.txt`;
+
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Downloaded ${filename}`, 'success');
+    }
+
+    async function deleteCurrentNote() {
+      if (State.activeNoteSlot === null) return;
+      elNoteTextarea.value = '';
+      await dbSaveNote(State.activeNoteSlot, '');
+      showToast(`Cleared note in Slot #${State.activeNoteSlot}`, 'info');
+      renderVaultNotesGrid();
+    }
+
+    /**
+     * =========================================================================
+     * 9. HIDDEN VAULT UI & FILE/VIDEO MANAGEMENT (< 2GB)
+     * =========================================================================
+     */
+    const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024;
+
+    async function openVaultModal() {
+      elCurrentPasswordDisplay.value = getVaultPassword();
+      elVaultModal.classList.add('open');
+      await refreshVaultUI();
+    }
+
+    function closeVaultModal() {
+      elVaultModal.classList.remove('open');
+      if (State.activeMediaBlobUrl) {
+        URL.revokeObjectURL(State.activeMediaBlobUrl);
+        State.activeMediaBlobUrl = null;
+      }
+    }
+
+    async function refreshVaultUI() {
+      await renderVaultFilesGrid();
+      await renderVaultNotesGrid();
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    async function renderVaultFilesGrid() {
+      const files = await dbGetAllFiles();
+      let totalBytes = 0;
+
+      elVaultFilesGrid.innerHTML = '';
+
+      if (files.length === 0) {
+        elVaultFilesGrid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 3rem 0; font-style: italic;">
+            No files or videos in the vault yet. Upload anything under 2GB!
+          </div>
+        `;
+        elVaultStorageUsed.textContent = 'Storage: 0 MB used';
+        return;
+      }
+
+      files.forEach(file => {
+        totalBytes += file.size;
+
+        const card = document.createElement('div');
+        card.className = 'file-card';
+
+        const isVideo = file.type.startsWith('video/');
+        const isImage = file.type.startsWith('image/');
+
+        let previewMarkup = '<div class="file-icon-placeholder">📄</div>';
+        if (isVideo) {
+          previewMarkup = '<div class="file-icon-placeholder">🎬</div>';
+        } else if (isImage) {
+          previewMarkup = '<div class="file-icon-placeholder">🖼️</div>';
+        }
+
+        card.innerHTML = `
+          <div class="file-preview-box">
+            ${previewMarkup}
+          </div>
+          <div class="file-info-name" title="${file.name}">${file.name}</div>
+          <div class="file-info-meta">
+            <span>${formatFileSize(file.size)}</span>
+            <span>${new Date(file.uploadedAt).toLocaleDateString()}</span>
+          </div>
+          <div class="file-card-actions">
+            <button class="file-action-btn view-btn">▶ Open</button>
+            <button class="file-action-btn download-btn">📥</button>
+            <button class="file-action-btn delete delete-btn">🗑</button>
+          </div>
+        `;
+
+        card.querySelector('.view-btn').addEventListener('click', () => openMediaViewer(file));
+        card.querySelector('.download-btn').addEventListener('click', () => downloadVaultFile(file));
+        card.querySelector('.delete-btn').addEventListener('click', async () => {
+          if (confirm(`Delete "${file.name}" from vault?`)) {
+            await dbDeleteFile(file.id);
+            showToast(`Deleted ${file.name}`, 'info');
+            renderVaultFilesGrid();
+          }
+        });
+
+        elVaultFilesGrid.appendChild(card);
+      });
+
+      elVaultStorageUsed.textContent = `Storage: ${formatFileSize(totalBytes)} used`;
+    }
+
+    async function renderVaultNotesGrid() {
+      const notes = await dbGetAllNotes();
+      const notesMap = {};
+      notes.forEach(n => { notesMap[n.slot] = n.content; });
+
+      elVaultNotesGrid.innerHTML = '';
+
+      for (let i = 0; i <= 9; i++) {
+        const slot = String(i);
+        const text = notesMap[slot] || '';
+
+        const card = document.createElement('div');
+        card.className = 'vault-note-card';
+        card.innerHTML = `
+          <div class="vault-note-header">
+            <span class="vault-note-slot">Number #${slot}</span>
+            <button class="btn-action btn-action-secondary edit-note-btn" style="padding: 3px 8px; font-size: 0.75rem;">Edit</button>
+          </div>
+          <div class="vault-note-preview">${text || '<em style="color:var(--text-muted)">Empty note</em>'}</div>
+        `;
+
+        card.querySelector('.edit-note-btn').addEventListener('click', () => {
+          openTextSaverModal(slot);
+        });
+
+        elVaultNotesGrid.appendChild(card);
+      }
+    }
+
+    async function handleVaultFileUpload(files) {
+      if (!files || files.length === 0) return;
+
+      for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+          showToast(`❌ "${file.name}" exceeds 2GB maximum limit!`, 'error');
+          continue;
+        }
+
+        const fileRecord = {
+          id: Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          name: file.name,
+          size: file.size,
+          type: file.type || 'application/octet-stream',
+          data: file,
+          uploadedAt: Date.now()
+        };
+
+        try {
+          await dbSaveFile(fileRecord);
+          showToast(`Stored "${file.name}" in Vault!`, 'success');
+        } catch (err) {
+          console.error(err);
+          showToast(`Failed to store "${file.name}"`, 'error');
+        }
+      }
+
+      await renderVaultFilesGrid();
+    }
+
+    function openMediaViewer(fileRecord) {
+      elMediaViewerContent.innerHTML = '';
+      if (State.activeMediaBlobUrl) {
+        URL.revokeObjectURL(State.activeMediaBlobUrl);
+      }
+
+      const url = URL.createObjectURL(fileRecord.data);
+      State.activeMediaBlobUrl = url;
+
+      if (fileRecord.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.src = url;
+        video.controls = true;
+        video.autoplay = true;
+        elMediaViewerContent.appendChild(video);
+      } else if (fileRecord.type.startsWith('image/')) {
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = fileRecord.name;
+        elMediaViewerContent.appendChild(img);
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileRecord.name;
+        a.className = 'btn-action btn-action-primary';
+        a.textContent = `Download & View ${fileRecord.name}`;
+        elMediaViewerContent.appendChild(a);
+      }
+
+      elMediaViewerOverlay.classList.add('open');
+    }
+
+    function closeMediaViewer() {
+      elMediaViewerOverlay.classList.remove('open');
+      elMediaViewerContent.innerHTML = '';
+      if (State.activeMediaBlobUrl) {
+        URL.revokeObjectURL(State.activeMediaBlobUrl);
+        State.activeMediaBlobUrl = null;
+      }
+    }
+
+    function downloadVaultFile(fileRecord) {
+      const url = URL.createObjectURL(fileRecord.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileRecord.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast(`Downloading "${fileRecord.name}"`, 'success');
+    }
+
+    /**
+     * =========================================================================
+     * 10. EVENT LISTENERS SETUP
+     * =========================================================================
+     */
+    function triggerRipple(e, button) {
+      const rect = button.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+
+      const diameter = Math.max(rect.width, rect.height) * 2;
+      const radius = diameter / 2;
+
+      let clientX = e.clientX;
+      let clientY = e.clientY;
+
+      if (!clientX && !clientY) {
+        clientX = rect.left + rect.width / 2;
+        clientY = rect.top + rect.height / 2;
+      }
+
+      ripple.style.width = ripple.style.height = `${diameter}px`;
+      ripple.style.left = `${clientX - rect.left - radius}px`;
+      ripple.style.top = `${clientY - rect.top - radius}px`;
+
+      const prevRipple = button.querySelector('.ripple');
+      if (prevRipple) prevRipple.remove();
+
+      button.appendChild(ripple);
+      ripple.addEventListener('animationend', () => ripple.remove());
+    }
+
+    function animateButtonPress(button) {
+      button.classList.add('btn-pressed');
+      setTimeout(() => button.classList.remove('btn-pressed'), 120);
+    }
+
+    function setupEventListeners() {
+      document.querySelector('.keypad').addEventListener('click', (e) => {
+        if (isHoldTriggered) {
+          isHoldTriggered = false;
+          return;
+        }
+
+        const button = e.target.closest('.calc-btn');
+        if (!button) return;
+
+        triggerRipple(e, button);
+        animateButtonPress(button);
+
+        const action = button.getAttribute('data-action');
+        switch (action) {
+          case 'digit':
+            inputDigit(button.getAttribute('data-digit'));
+            break;
+          case 'decimal':
+            inputDecimal();
+            break;
+          case 'operator':
+            inputOperator(button.getAttribute('data-op'));
+            break;
+          case 'star':
+            inputStar();
+            break;
+          case 'hash':
+            inputHash();
+            break;
+          case 'sign':
+            toggleSign();
+            break;
+          case 'percent':
+            applyPercent();
+            break;
+          case 'clear':
+            clearCalculator();
+            break;
+          case 'equals':
+            calculateResult();
+            break;
+        }
+      });
+
+      elBtnToggleTheme.addEventListener('click', (e) => {
+        triggerRipple(e, elBtnToggleTheme);
+        toggleTheme();
+      });
+
+      elBtnToggleHistory.addEventListener('click', (e) => {
+        triggerRipple(e, elBtnToggleHistory);
+        toggleHistoryPanel();
+      });
+
+      elBtnClearHistory.addEventListener('click', () => {
+        clearHistory();
+      });
+
+      // Text Saver Modal Listeners
+      elBtnCloseTextSaver.addEventListener('click', closeTextSaverModal);
+      elBtnSaveNote.addEventListener('click', saveCurrentNote);
+      elBtnCopyNote.addEventListener('click', copyCurrentNote);
+      elBtnExportTxt.addEventListener('click', exportNoteAsTxt);
+      elBtnDeleteNote.addEventListener('click', deleteCurrentNote);
+
+      // Vault Modal Listeners
+      elBtnLockVault.addEventListener('click', closeVaultModal);
+
+      document.querySelectorAll('.vault-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.vault-tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          const tabName = btn.getAttribute('data-tab');
+          document.getElementById('vault-tab-media').style.display = tabName === 'media' ? 'block' : 'none';
+          document.getElementById('vault-tab-notes').style.display = tabName === 'notes' ? 'block' : 'none';
+          document.getElementById('vault-tab-settings').style.display = tabName === 'settings' ? 'block' : 'none';
+        });
+      });
+
+      elBtnSelectFiles.addEventListener('click', () => elVaultFileInput.click());
+      elVaultFileInput.addEventListener('change', (e) => handleVaultFileUpload(e.target.files));
+
+      elVaultDropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        elVaultDropZone.classList.add('dragover');
+      });
+      elVaultDropZone.addEventListener('dragleave', () => elVaultDropZone.classList.remove('dragover'));
+      elVaultDropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        elVaultDropZone.classList.remove('dragover');
+        handleVaultFileUpload(e.dataTransfer.files);
+      });
+
+      elMediaViewerClose.addEventListener('click', closeMediaViewer);
+      elMediaViewerOverlay.addEventListener('click', (e) => {
+        if (e.target === elMediaViewerOverlay) closeMediaViewer();
+      });
+
+      elBtnUpdatePassword.addEventListener('click', () => {
+        const newPin = elNewPasswordInput.value.trim();
+        if (!newPin) {
+          showToast('Please enter a valid password', 'error');
+          return;
+        }
+        setVaultPassword(newPin);
+        elCurrentPasswordDisplay.value = newPin;
+        elNewPasswordInput.value = '';
+        showToast(`Password updated to "${newPin}"!`, 'success');
+      });
+
+      elBtnWipeVault.addEventListener('click', async () => {
+        if (confirm('Are you ABSOLUTELY sure? This will delete all files, videos, and notes permanently.')) {
+          await dbWipeAll();
+          showToast('Vault wiped completely', 'info');
+          await refreshVaultUI();
+        }
+      });
+
+      // Keyboard support
+      window.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        const key = e.key;
+
+        if (/^[0-9]$/.test(key)) {
+          e.preventDefault();
+          const btn = document.querySelector(`button[data-digit="${key}"]`);
+          if (btn) {
+            triggerRipple({ clientX: 0, clientY: 0 }, btn);
+            animateButtonPress(btn);
+          }
+          inputDigit(key);
+          return;
+        }
+
+        if (key === '*') {
+          e.preventDefault();
+          const btn = document.getElementById('btn-star');
+          if (btn) {
+            triggerRipple({ clientX: 0, clientY: 0 }, btn);
+            animateButtonPress(btn);
+          }
+          inputStar();
+          return;
+        }
+
+        if (key === '#') {
+          e.preventDefault();
+          const btn = document.getElementById('btn-hash');
+          if (btn) {
+            triggerRipple({ clientX: 0, clientY: 0 }, btn);
+            animateButtonPress(btn);
+          }
+          inputHash();
+          return;
+        }
+
+        if (key === '.' || key === ',') {
+          e.preventDefault();
+          const btn = document.querySelector('button[data-action="decimal"]');
+          if (btn) {
+            triggerRipple({ clientX: 0, clientY: 0 }, btn);
+            animateButtonPress(btn);
+          }
+          inputDecimal();
+          return;
+        }
+
+        if (key === '+') {
+          e.preventDefault();
+          const btn = document.getElementById('btn-add');
+          triggerRipple({ clientX: 0, clientY: 0 }, btn);
+          animateButtonPress(btn);
+          inputOperator('+');
+          return;
+        }
+
+        if (key === '-' || key === '−') {
+          e.preventDefault();
+          const btn = document.getElementById('btn-subtract');
+          triggerRipple({ clientX: 0, clientY: 0 }, btn);
+          animateButtonPress(btn);
+          inputOperator('−');
+          return;
+        }
+
+        if (key === 'x' || key === 'X') {
+          e.preventDefault();
+          const btn = document.getElementById('btn-multiply');
+          triggerRipple({ clientX: 0, clientY: 0 }, btn);
+          animateButtonPress(btn);
+          inputOperator('×');
+          return;
+        }
+
+        if (key === '/' || key === '÷') {
+          e.preventDefault();
+          const btn = document.getElementById('btn-divide');
+          triggerRipple({ clientX: 0, clientY: 0 }, btn);
+          animateButtonPress(btn);
+          inputOperator('÷');
+          return;
+        }
+
+        if (key === '%') {
+          e.preventDefault();
+          const btn = document.getElementById('btn-percent');
+          triggerRipple({ clientX: 0, clientY: 0 }, btn);
+          animateButtonPress(btn);
+          applyPercent();
+          return;
+        }
+
+        if (key === 'Enter' || key === '=') {
+          e.preventDefault();
+          const btn = document.getElementById('btn-equals');
+          triggerRipple({ clientX: 0, clientY: 0 }, btn);
+          animateButtonPress(btn);
+          calculateResult();
+          return;
+        }
+
+        if (key === 'Backspace') {
+          e.preventDefault();
+          handleBackspace();
+          return;
+        }
+
+        if (key === 'Escape' || key === 'c' || key === 'C') {
+          e.preventDefault();
+          const btn = document.getElementById('btn-clear');
+          triggerRipple({ clientX: 0, clientY: 0 }, btn);
+          animateButtonPress(btn);
+          clearCalculator();
+          return;
+        }
+
+        if (key === 'h' || key === 'H') {
+          e.preventDefault();
+          toggleHistoryPanel();
+          return;
+        }
+
+        if (key === 't' || key === 'T') {
+          e.preventDefault();
+          toggleTheme();
+          return;
+        }
+      });
+    }
+
+    async function init() {
+      setupStaggeredButtonAnimation();
+      initTheme();
+      setupEventListeners();
+      setupNumberLongPress();
+      updateDisplayUI();
+      try {
+        await openVaultDB();
+      } catch (e) {
+        console.error('Failed to pre-open vault DB', e);
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
